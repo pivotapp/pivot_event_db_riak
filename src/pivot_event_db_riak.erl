@@ -2,6 +2,7 @@
 
 -export([get/3]).
 -export([set/4]).
+-export([remove/3]).
 -export([list/2]).
 
 -define(BUCKET(Env), <<"pivot-event-", Env/binary>>).
@@ -34,6 +35,9 @@ set(Env, App, Event, Value) ->
   ]),
   Obj2 = riakc_obj:update_metadata(Obj, MD2),
   riakou:do(put, [Obj2]).
+
+remove(Env, App, Event) ->
+  riakou:do(delete, [?BUCKET(Env), ?KEY(App, Event)]).
 
 list(Env, App) ->
   case riakou:do(get_index, [?BUCKET(Env), {binary_index, "app"}, App]) of

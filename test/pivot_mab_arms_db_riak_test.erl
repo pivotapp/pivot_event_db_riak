@@ -21,6 +21,10 @@ basic_test() ->
 
   true = check_set_equality(Events, ReturnedEvents),
 
+  [ok, ok, ok] = [pivot_event_db_riak:remove(Env, App, Event) || {Event, _} <- Events],
+
+  {ok, []} = pivot_event_db_riak:list(Env, App),
+
   ok.
 
 check_set_equality(List1, List2) ->
