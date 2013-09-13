@@ -7,6 +7,8 @@
 -define(BUCKET(Env), <<"pivot-event-", Env/binary>>).
 -define(KEY(App, Event), <<App/binary, ":", Event/binary>>).
 
+-include_lib("riakc/include/riakc.hrl").
+
 get(Env, App, Event) ->
   case riakou:do(get, [?BUCKET(Env), ?KEY(App, Event)]) of
     {ok, Obj} ->
@@ -36,8 +38,9 @@ set(Env, App, Event, Value) ->
 list(Env, App) ->
   case riakou:do(get_index, [?BUCKET(Env), {binary_index, "app"}, App]) of
     {ok, {keys, Keys}} ->
-      %% TODO return [{Event, Reward}]
-      {ok, Keys};
+      get_values(Env, App, Keys);
+    {ok, Rec} ->
+      get_values(Env, App, Rec?INDEX_RESULTS.keys);
     Error ->
       Error
   end.
@@ -54,3 +57,12 @@ pick_highest([BinValue, Values], Highest) ->
   end;
 pick_highest([_|Values], Highest) ->
   pick_highest(Values, Highest).
+
+get_values(Env, App, Keys) ->
+  Pairs = [begin
+    AppLength = byte_size(App),
+    <<App:AppLength/binary, ":", StrippedKey/binary>> = Key,
+    {ok, Value} = ?MODULE:get(Env, App, StrippedKey),
+    {StrippedKey, Value}
+  end || Key <- Keys],
+  {ok, Pairs}.
